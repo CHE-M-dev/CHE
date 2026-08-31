@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +30,7 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
@@ -31,8 +43,16 @@ export default function SignupPage() {
       return;
     }
 
+    if (data.session) {
+      router.replace(next ?? "/");
+      router.refresh();
+      return;
+    }
+
     setDone(true);
   }
+
+  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
 
   if (done) {
     return (
@@ -43,7 +63,7 @@ export default function SignupPage() {
             We sent a confirmation link to <span className="font-medium">{email}</span>.
             Confirm your address, then sign in.
           </p>
-          <Link href="/login" className="inline-block text-sm font-medium text-neutral-900 underline">
+          <Link href={loginHref} className="inline-block text-sm font-medium text-neutral-900 underline">
             Back to sign in
           </Link>
         </div>
@@ -55,7 +75,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-neutral-200 bg-white p-8 shadow-sm">
         <div className="space-y-1 text-center">
-          <h1 className="text-xl font-semibold text-neutral-900">Join the hub</h1>
+          <h1 className="text-xl font-semibold text-neutral-900">Startup Hub</h1>
           <p className="text-sm text-neutral-500">Create your membership account</p>
         </div>
 
@@ -116,7 +136,7 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-neutral-500">
           Already a member?{" "}
-          <Link href="/login" className="font-medium text-neutral-900 underline">
+          <Link href={loginHref} className="font-medium text-neutral-900 underline">
             Sign in
           </Link>
         </p>

@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +37,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace("/");
+    router.replace(next ?? "/");
     router.refresh();
   }
 
@@ -35,7 +45,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-neutral-200 bg-white p-8 shadow-sm">
         <div className="space-y-1 text-center">
-          <h1 className="text-xl font-semibold text-neutral-900">Hub Membership</h1>
+          <h1 className="text-xl font-semibold text-neutral-900">Startup Hub</h1>
           <p className="text-sm text-neutral-500">Sign in to your account</p>
         </div>
 
@@ -81,7 +91,10 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-neutral-500">
           Not a member yet?{" "}
-          <Link href="/signup" className="font-medium text-neutral-900 underline">
+          <Link
+            href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+            className="font-medium text-neutral-900 underline"
+          >
             Sign up
           </Link>
         </p>

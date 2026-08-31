@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hub Membership",
-  description: "Membership check-in for the hub",
+  title: "Startup Hub Membership",
+  description: "Membership for startup companies and their teams",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

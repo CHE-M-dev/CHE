@@ -1,68 +1,45 @@
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/admin-context";
 
-export default async function AdminDashboardPage() {
-  const supabase = await createClient();
+export default async function AdminOverviewPage() {
+  const { supabase, isSuperAdmin, features } = await getAdminContext();
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const [{ count: totalMembers }, { count: activeMembers }, { count: checkInsToday }, { data: recentCheckIns }] =
-    await Promise.all([
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("profiles").select("*", { count: "exact", head: true }).eq("status", "active"),
-      supabase
-        .from("check_ins")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", startOfToday.toISOString()),
-      supabase
-        .from("check_ins")
-        .select("id, created_at, member:profiles!check_ins_member_id_fkey(full_name, email)")
-        .order("created_at", { ascending: false })
-        .limit(10),
-    ]);
+  const [companyCount, memberCount, adminCount] = await Promise.all([
+    features.has("manage_companies")
+      ? supabase.from("companies").select("*", { count: "exact", head: true }).then((r) => r.count)
+      : null,
+    features.has("manage_members")
+      ? supabase.from("company_members").select("*", { count: "exact", head: true }).then((r) => r.count)
+      : null,
+    isSuperAdmin || features.has("view_admins")
+      ? supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .in("system_role", ["admin", "super_admin"])
+          .then((r) => r.count)
+      : null,
+  ]);
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total members" value={totalMembers ?? 0} />
-        <StatCard label="Active members" value={activeMembers ?? 0} />
-        <StatCard label="Check-ins today" value={checkInsToday ?? 0} />
+        <StatCard label="Companies" value={companyCount} />
+        <StatCard label="Total members" value={memberCount} />
+        <StatCard label="Admins" value={adminCount} />
       </div>
-
-      <Link
-        href="/admin/scan"
-        className="block rounded-xl border border-neutral-900 bg-neutral-900 px-6 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-700"
-      >
-        Scan member QR code to check in →
-      </Link>
-
-      <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">Recent check-ins</h2>
-        {!recentCheckIns || recentCheckIns.length === 0 ? (
-          <p className="text-sm text-neutral-500">No check-ins yet.</p>
-        ) : (
-          <ul className="divide-y divide-neutral-100">
-            {recentCheckIns.map((c) => (
-              <li key={c.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="font-medium text-neutral-800">
-                  {c.member?.full_name ?? "Unknown member"}
-                </span>
-                <span className="text-neutral-500">{new Date(c.created_at).toLocaleString()}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <p className="text-sm text-neutral-500">
+        {isSuperAdmin
+          ? "You have full access. Manage sub-admins and their permissions under Admins."
+          : "You can see the sections your permissions grant you in the navigation above."}
+      </p>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
       <p className="text-sm text-neutral-500">{label}</p>
-      <p className="mt-1 text-3xl font-semibold text-neutral-900">{value}</p>
+      <p className="mt-1 text-3xl font-semibold text-neutral-900">{value ?? "—"}</p>
     </div>
   );
 }

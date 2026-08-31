@@ -7,85 +7,216 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
-      check_ins: {
+      profiles: {
         Row: {
-          created_at: string
           id: string
-          member_id: string
-          scanned_by: string
+          email: string
+          full_name: string
+          system_role: Database["public"]["Enums"]["system_role"]
+          created_at: string
         }
         Insert: {
+          id: string
+          email: string
+          full_name?: string
+          system_role?: Database["public"]["Enums"]["system_role"]
           created_at?: string
-          id?: string
-          member_id: string
-          scanned_by: string
         }
         Update: {
-          created_at?: string
           id?: string
-          member_id?: string
-          scanned_by?: string
+          email?: string
+          full_name?: string
+          system_role?: Database["public"]["Enums"]["system_role"]
+          created_at?: string
+        }
+        Relationships: []
+      }
+      companies: {
+        Row: {
+          id: string
+          name: string
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_by?: string
+          created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "check_ins_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "check_ins_scanned_by_fkey"
-            columns: ["scanned_by"]
+            foreignKeyName: "companies_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      profiles: {
+      company_members: {
         Row: {
-          created_at: string
-          email: string
-          full_name: string
           id: string
-          role: Database["public"]["Enums"]["user_role"]
-          status: string
+          company_id: string
+          user_id: string
+          company_role: Database["public"]["Enums"]["company_role"]
+          invited_by: string | null
+          created_at: string
         }
         Insert: {
+          id?: string
+          company_id: string
+          user_id: string
+          company_role: Database["public"]["Enums"]["company_role"]
+          invited_by?: string | null
           created_at?: string
-          email: string
-          full_name: string
-          id: string
-          role?: Database["public"]["Enums"]["user_role"]
-          status?: string
         }
         Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          status?: string
+          company_id?: string
+          user_id?: string
+          company_role?: Database["public"]["Enums"]["company_role"]
+          invited_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invites: {
+        Row: {
+          id: string
+          company_id: string
+          role: Database["public"]["Enums"]["company_role"]
+          token: string
+          created_by: string
+          max_uses: number
+          uses_count: number
+          revoked: boolean
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          role: Database["public"]["Enums"]["company_role"]
+          token?: string
+          created_by: string
+          max_uses?: number
+          uses_count?: number
+          revoked?: boolean
+          expires_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          token?: string
+          created_by?: string
+          max_uses?: number
+          uses_count?: number
+          revoked?: boolean
+          expires_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_features: {
+        Row: {
+          feature_key: string
+          label: string
+          description: string
+        }
+        Insert: {
+          feature_key: string
+          label: string
+          description: string
+        }
+        Update: {
+          feature_key?: string
+          label?: string
+          description?: string
         }
         Relationships: []
+      }
+      admin_feature_grants: {
+        Row: {
+          admin_id: string
+          feature_key: string
+          enabled: boolean
+        }
+        Insert: {
+          admin_id: string
+          feature_key: string
+          enabled?: boolean
+        }
+        Update: {
+          admin_id?: string
+          feature_key?: string
+          enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_feature_grants_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "admin_features"
+            referencedColumns: ["feature_key"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      is_admin: { Args: never; Returns: boolean }
+      current_system_role: { Args: never; Returns: Database["public"]["Enums"]["system_role"] }
+      current_company_id: { Args: never; Returns: string }
+      current_company_role: { Args: never; Returns: Database["public"]["Enums"]["company_role"] }
+      admin_has_feature: { Args: { p_feature: string }; Returns: boolean }
+      create_company: { Args: { p_name: string }; Returns: string }
+      get_invite_preview: {
+        Args: { p_token: string }
+        Returns: { company_name: string; role: Database["public"]["Enums"]["company_role"]; valid: boolean }[]
+      }
+      accept_invite: { Args: { p_token: string }; Returns: string }
     }
     Enums: {
-      user_role: "admin" | "member"
+      system_role: "super_admin" | "admin" | "user"
+      company_role: "leader" | "startup_member" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -213,7 +344,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["admin", "member"],
+      system_role: ["super_admin", "admin", "user"],
+      company_role: ["leader", "startup_member", "employee"],
     },
   },
 } as const
