@@ -42,6 +42,11 @@ joins you to that company instead.
   scoped to a company and a role (`startup_member` or `employee`), created
   only by the company leader. Accepting one is handled by the `accept_invite`
   SQL function so the check-and-join is atomic.
+- `/companies` is a public directory — searchable by anyone, signed in or
+  not — built on a `public_companies` view that exposes only the safe,
+  non-sensitive fields (name, industry, size, funding stage, founded year,
+  website, description). Phone and address stay private to the company's
+  own members and admins.
 - `admin_features` is the fixed catalog of togglable admin capabilities
   (`manage_companies`, `manage_members`, `manage_invites`, `view_admins`).
   `admin_feature_grants` records which of those a given sub-admin has —

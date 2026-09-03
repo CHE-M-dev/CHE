@@ -19,5 +19,6 @@ export type CompanyMember = Tables<"company_members">;
 export type Invite = Tables<"invites">;
 export type AdminFeature = Tables<"admin_features">;
 export type AdminFeatureGrant = Tables<"admin_feature_grants">;
+export type PublicCompany = Tables<"public_companies">;
 
 export type { Database } from "@/lib/supabase/database.types";

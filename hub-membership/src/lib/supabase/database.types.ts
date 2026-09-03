@@ -224,7 +224,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_companies: {
+        Row: {
+          id: string
+          name: string
+          industry: string | null
+          company_size: Database["public"]["Enums"]["company_size"] | null
+          funding_stage: Database["public"]["Enums"]["funding_stage"] | null
+          founded_year: number | null
+          website: string | null
+          description: string | null
+          created_at: string
+        }
+        Relationships: []
+      }
     }
     Functions: {
       current_system_role: { Args: never; Returns: Database["public"]["Enums"]["system_role"] }

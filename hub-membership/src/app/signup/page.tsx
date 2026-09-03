@@ -140,6 +140,12 @@ function SignupForm() {
             Sign in
           </Link>
         </p>
+
+        <p className="text-center text-sm text-neutral-500">
+          <Link href="/companies" className="font-medium text-neutral-900 underline">
+            Browse startups on the hub
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -31,10 +31,12 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPath = AUTH_PATHS.some((p) => path.startsWith(p));
-  const isInvitePath = path.startsWith("/invite/");
+  // Accessible to everyone, signed in or not: accepting an invite, and the
+  // public company directory.
+  const isPublicContentPath = path.startsWith("/invite/") || path.startsWith("/companies");
 
   if (!user) {
-    if (isAuthPath || isInvitePath) return response;
+    if (isAuthPath || isPublicContentPath) return response;
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -55,7 +57,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isInvitePath) return response;
+  if (isPublicContentPath) return response;
 
   if (path.startsWith("/admin") && !isAdmin) {
     const url = request.nextUrl.clone();
