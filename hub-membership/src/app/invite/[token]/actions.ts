@@ -20,5 +20,5 @@ export async function acceptInvite(token: string) {
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  redirect("/apps/company");
 }

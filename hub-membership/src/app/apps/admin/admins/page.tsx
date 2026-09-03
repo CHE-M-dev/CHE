@@ -5,7 +5,7 @@ import { FeatureToggle } from "./feature-toggle";
 
 export default async function AdminAdminsPage() {
   const { supabase, isSuperAdmin, features } = await getAdminContext();
-  if (!isSuperAdmin && !features.has("view_admins")) redirect("/admin");
+  if (!isSuperAdmin && !features.has("view_admins")) redirect("/apps/admin");
 
   const [{ data: admins }, { data: featureCatalog }, { data: grants }] = await Promise.all([
     supabase

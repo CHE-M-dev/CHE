@@ -56,20 +56,12 @@ export default async function CompanyDirectoryPage({
   const { data: companies } = await query;
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+    <div>
+      <div className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto max-w-4xl px-4 py-3">
           <span className="text-sm font-semibold text-neutral-900">Startup Directory</span>
-          <div className="flex items-center gap-3 text-sm font-medium">
-            <Link href="/login" className="text-neutral-600 hover:text-neutral-900">
-              Sign in
-            </Link>
-            <Link href="/signup" className="text-neutral-600 hover:text-neutral-900">
-              Sign up
-            </Link>
-          </div>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
         <form className="flex flex-wrap gap-2 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
@@ -111,7 +103,7 @@ export default async function CompanyDirectoryPage({
           </button>
           {(q || size || stage) && (
             <Link
-              href="/companies"
+              href="/apps/directory"
               className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
             >
               Clear

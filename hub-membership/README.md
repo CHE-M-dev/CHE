@@ -4,6 +4,26 @@ A membership app for a startup hub. Nothing but membership: manual email/passwor
 accounts, startup companies, their teams, and admin oversight. No other features
 are in scope by design.
 
+## Architecture: sign in, then an app launcher
+
+There is exactly one landing page: `/login`. Nothing is public — the company
+directory included. Once signed in, every user lands on `/apps`, a launcher
+(in the spirit of Odoo's app grid) showing only the apps their role grants
+them:
+
+- **Company** (`/apps/company`) — for everyone except admins. Shows the
+  create-company form if you don't have one yet; otherwise your company's
+  profile, roster, and invite links.
+- **Directory** (`/apps/directory`) — for every signed-in user. Search every
+  startup on the hub.
+- **Admin** (`/apps/admin`) — only for admins and super admins. Sub-pages
+  (Companies, Members, Invites, Admins) are individually gated by that
+  admin's feature grants.
+
+Each app is self-contained under its own route segment with its own layout,
+actions, and components — adding a new app means adding a new folder under
+`src/app/apps/` and a tile on `/apps`, not touching the others.
+
 ## Roles
 
 - **Company leader** — the person who creates a company. Can invite startup
@@ -17,9 +37,9 @@ are in scope by design.
 - **Super admin** — full access. Creates sub-admin accounts and toggles which
   features each one can access.
 
-A user belongs to at most one company. Signing up with no invite link prompts
-you to create a company (making you its leader); signing up via an invite link
-joins you to that company instead.
+A user belongs to at most one company. Signing up with no invite link takes
+you to `/apps/company`, which prompts you to create a company (making you its
+leader); signing up via an invite link joins you to that company instead.
 
 ## Stack
 
@@ -36,25 +56,26 @@ joins you to that company instead.
   and a unique constraint on `user_id` so nobody is in two companies at once.
 - A company is created with just a name; the leader fills in the rest —
   industry, company size, funding stage, founded year, website, phone,
-  address, and a short description — from **Dashboard → Company profile**
-  whenever they want. All of it is optional.
+  address, and a short description — from the Company app's **Company
+  profile** section whenever they want. All of it is optional.
 - `invites` are single-use-by-default tokenized links (`/invite/<token>`)
   scoped to a company and a role (`startup_member` or `employee`), created
   only by the company leader. Accepting one is handled by the `accept_invite`
   SQL function so the check-and-join is atomic.
-- `/companies` is a public directory — searchable by anyone, signed in or
-  not — built on a `public_companies` view that exposes only the safe,
-  non-sensitive fields (name, industry, size, funding stage, founded year,
-  website, description). Phone and address stay private to the company's
-  own members and admins.
+- The Directory app is backed by a `public_companies` view that exposes only
+  safe, non-sensitive fields (name, industry, size, funding stage, founded
+  year, website, description). Phone and address stay private to the
+  company's own members and admins — the view just never selects them. It's
+  a view rather than a table for that reason: it's the one thing every
+  signed-in user can read regardless of which company they belong to.
 - `admin_features` is the fixed catalog of togglable admin capabilities
   (`manage_companies`, `manage_members`, `manage_invites`, `view_admins`).
   `admin_feature_grants` records which of those a given sub-admin has —
   set only by a super admin.
-- Route access (`/onboarding`, `/dashboard/*`, `/admin/*`) and post-login
-  redirects are enforced in `src/middleware.ts` based on the signed-in user's
-  system role and company membership. Every table also has Row Level Security
-  policies so access is enforced at the database layer regardless of the app.
+- Route access and the post-login redirect to `/apps` are enforced in
+  `src/middleware.ts` based on the signed-in user's system role. Every table
+  also has Row Level Security policies so access is enforced at the database
+  layer regardless of the app.
 
 ## Local setup
 

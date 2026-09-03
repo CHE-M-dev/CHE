@@ -3,6 +3,7 @@ import { InviteGenerator } from "./invite-generator";
 import { RemoveMemberButton } from "./remove-member-button";
 import { RevokeInviteButton } from "./revoke-invite-button";
 import { CompanyProfileForm } from "./company-profile";
+import { CreateCompanyForm } from "./create-company-form";
 
 const ROLE_LABELS: Record<string, string> = {
   leader: "Leader",
@@ -31,9 +32,9 @@ export default async function DashboardPage() {
     .from("company_members")
     .select("id, company_id, company_role")
     .eq("user_id", user!.id)
-    .single();
+    .maybeSingle();
 
-  if (!me) return null;
+  if (!me) return <CreateCompanyForm />;
 
   const isLeader = me.company_role === "leader";
 

@@ -31,57 +31,47 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPath = AUTH_PATHS.some((p) => path.startsWith(p));
-  // Accessible to everyone, signed in or not: accepting an invite, and the
-  // public company directory.
-  const isPublicContentPath = path.startsWith("/invite/") || path.startsWith("/companies");
+  const isInvitePath = path.startsWith("/invite/");
 
+  // Signing in is the only landing page — everything else, including the
+  // company directory, requires an account.
   if (!user) {
-    if (isAuthPath || isPublicContentPath) return response;
+    if (isAuthPath || isInvitePath) return response;
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  const [{ data: profile }, { data: membership }] = await Promise.all([
-    supabase.from("profiles").select("system_role").eq("id", user.id).single(),
-    supabase.from("company_members").select("company_id").eq("user_id", user.id).maybeSingle(),
-  ]);
-
-  const isAdmin = profile?.system_role === "super_admin" || profile?.system_role === "admin";
-  const hasCompany = !!membership;
-  const home = isAdmin ? "/admin" : hasCompany ? "/dashboard" : "/onboarding";
-
   if (isAuthPath || path === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = home;
+    url.pathname = "/apps";
     return NextResponse.redirect(url);
   }
 
-  if (isPublicContentPath) return response;
+  if (isInvitePath) return response;
 
-  if (path.startsWith("/admin") && !isAdmin) {
-    const url = request.nextUrl.clone();
-    url.pathname = home;
-    return NextResponse.redirect(url);
-  }
+  // Everything under /apps is otherwise open to any signed-in user — each
+  // app decides its own access beyond that. The two exceptions: the Admin
+  // app is admin-only, and the Company app doesn't apply to admin accounts
+  // (they don't hold company memberships).
+  if (path.startsWith("/apps/admin") || path.startsWith("/apps/company")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("system_role")
+      .eq("id", user.id)
+      .single();
+    const isAdmin = profile?.system_role === "super_admin" || profile?.system_role === "admin";
 
-  if (path.startsWith("/dashboard")) {
-    if (isAdmin) {
+    if (path.startsWith("/apps/admin") && !isAdmin) {
       const url = request.nextUrl.clone();
-      url.pathname = "/admin";
+      url.pathname = "/apps";
       return NextResponse.redirect(url);
     }
-    if (!hasCompany) {
+    if (path.startsWith("/apps/company") && isAdmin) {
       const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
+      url.pathname = "/apps";
       return NextResponse.redirect(url);
     }
-  }
-
-  if (path.startsWith("/onboarding") && (isAdmin || hasCompany)) {
-    const url = request.nextUrl.clone();
-    url.pathname = home;
-    return NextResponse.redirect(url);
   }
 
   return response;

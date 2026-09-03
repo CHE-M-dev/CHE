@@ -9,7 +9,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function AdminInvitesPage() {
   const { supabase, features } = await getAdminContext();
-  if (!features.has("manage_invites")) redirect("/admin");
+  if (!features.has("manage_invites")) redirect("/apps/admin");
 
   const { data: invites } = await supabase
     .from("invites")

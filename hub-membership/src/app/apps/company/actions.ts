@@ -1,8 +1,26 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { CompanyRole } from "@/lib/supabase/types";
+
+export async function createCompany(_: { error?: string } | undefined, formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+
+  if (!name) {
+    return { error: "Company name is required." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_company", { p_name: name });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/apps/company");
+}
 
 export async function createInvite(role: Extract<CompanyRole, "startup_member" | "employee">) {
   const supabase = await createClient();
@@ -30,7 +48,7 @@ export async function createInvite(role: Extract<CompanyRole, "startup_member" |
 
   if (error) return { error: error.message };
 
-  revalidatePath("/dashboard");
+  revalidatePath("/apps/company");
   return { token: data.token };
 }
 
@@ -38,7 +56,7 @@ export async function revokeInvite(inviteId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("invites").update({ revoked: true }).eq("id", inviteId);
   if (error) return { error: error.message };
-  revalidatePath("/dashboard");
+  revalidatePath("/apps/company");
   return {};
 }
 
@@ -46,7 +64,7 @@ export async function removeCompanyMember(memberRowId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("company_members").delete().eq("id", memberRowId);
   if (error) return { error: error.message };
-  revalidatePath("/dashboard");
+  revalidatePath("/apps/company");
   return {};
 }
 
@@ -110,6 +128,6 @@ export async function updateCompanyProfile(_: { error?: string } | undefined, fo
 
   if (error) return { error: error.message };
 
-  revalidatePath("/dashboard");
+  revalidatePath("/apps/company");
   return {};
 }

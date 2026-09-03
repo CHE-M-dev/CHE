@@ -58,7 +58,7 @@ export async function createSubAdmin(_: { error?: string } | undefined, formData
     return { error: roleError.message };
   }
 
-  revalidatePath("/admin/admins");
+  revalidatePath("/apps/admin/admins");
   return {};
 }
 
@@ -70,6 +70,6 @@ export async function toggleAdminFeature(adminId: string, featureKey: string, en
     .upsert({ admin_id: adminId, feature_key: featureKey, enabled }, { onConflict: "admin_id,feature_key" });
 
   if (error) return { error: error.message };
-  revalidatePath("/admin/admins");
+  revalidatePath("/apps/admin/admins");
   return {};
 }

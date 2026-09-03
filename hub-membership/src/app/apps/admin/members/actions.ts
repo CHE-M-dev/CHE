@@ -7,6 +7,6 @@ export async function adminRemoveMember(memberRowId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("company_members").delete().eq("id", memberRowId);
   if (error) return { error: error.message };
-  revalidatePath("/admin/members");
+  revalidatePath("/apps/admin/members");
   return {};
 }

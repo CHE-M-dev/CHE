@@ -14,7 +14,7 @@ const FUNDING_STAGE_LABELS: Record<string, string> = {
 
 export default async function AdminCompaniesPage() {
   const { supabase, features } = await getAdminContext();
-  if (!features.has("manage_companies")) redirect("/admin");
+  if (!features.has("manage_companies")) redirect("/apps/admin");
 
   const { data: companies } = await supabase
     .from("companies")
