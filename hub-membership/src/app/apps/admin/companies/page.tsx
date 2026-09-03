@@ -1,15 +1,18 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getAdminContext } from "@/lib/admin-context";
+import { ReviewButtons } from "./review-buttons";
 
-const FUNDING_STAGE_LABELS: Record<string, string> = {
-  bootstrapped: "Bootstrapped",
-  pre_seed: "Pre-seed",
-  seed: "Seed",
-  series_a: "Series A",
-  series_b: "Series B",
-  series_c_plus: "Series C+",
-  public: "Public",
-  acquired: "Acquired",
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pending review",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+
+const STATUS_CLASSES: Record<string, string> = {
+  pending: "text-amber-600",
+  approved: "text-emerald-600",
+  rejected: "text-red-600",
 };
 
 export default async function AdminCompaniesPage() {
@@ -18,7 +21,7 @@ export default async function AdminCompaniesPage() {
 
   const { data: companies } = await supabase
     .from("companies")
-    .select("id, name, created_at, industry, company_size, funding_stage")
+    .select("id, name, status, industry, company_size, funding_stage, created_at")
     .order("created_at", { ascending: false });
 
   return (
@@ -32,19 +35,22 @@ export default async function AdminCompaniesPage() {
             const details = [
               c.industry,
               c.company_size ? `${c.company_size} employees` : null,
-              c.funding_stage ? FUNDING_STAGE_LABELS[c.funding_stage] : null,
+              c.funding_stage,
             ].filter(Boolean);
             return (
-              <div key={c.id} className="flex items-center justify-between py-2 text-sm">
+              <div key={c.id} className="flex items-center justify-between py-3 text-sm">
                 <div>
-                  <span className="font-medium text-neutral-800">{c.name}</span>
-                  {details.length > 0 && (
-                    <span className="ml-2 text-neutral-500">{details.join(" · ")}</span>
-                  )}
+                  <p className="font-medium text-neutral-800">
+                    <Link href={`/apps/company/${c.id}`} className="underline hover:text-neutral-900">
+                      {c.name}
+                    </Link>
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {details.length > 0 && `${details.join(" · ")} · `}
+                    <span className={STATUS_CLASSES[c.status]}>{STATUS_LABELS[c.status]}</span>
+                  </p>
                 </div>
-                <span className="text-neutral-500">
-                  Created {new Date(c.created_at).toLocaleDateString()}
-                </span>
+                {c.status === "pending" && <ReviewButtons companyId={c.id} />}
               </div>
             );
           })}

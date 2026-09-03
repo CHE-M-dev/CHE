@@ -17,7 +17,7 @@ export async function getAdminContext() {
 
   let features = new Set<string>();
   if (isSuperAdmin) {
-    features = new Set(["manage_companies", "manage_members", "manage_invites", "view_admins"]);
+    features = new Set(["manage_companies", "view_admins"]);
   } else {
     const { data: grants } = await supabase
       .from("admin_feature_grants")

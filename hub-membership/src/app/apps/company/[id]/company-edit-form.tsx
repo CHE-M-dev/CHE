@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateCompanyProfile } from "./actions";
+import { updateCompany } from "./actions";
 import type { Company } from "@/lib/supabase/types";
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"];
@@ -20,15 +20,18 @@ const FUNDING_STAGES: { value: string; label: string }[] = [
 const inputClass =
   "w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none";
 
-export function CompanyProfileForm({ company }: { company: Company }) {
-  const [state, formAction, pending] = useActionState(updateCompanyProfile, undefined);
+export function CompanyEditForm({ company }: { company: Company }) {
+  const [state, formAction, pending] = useActionState(updateCompany.bind(null, company.id), undefined);
 
   return (
     <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+      <Field label="Company name" full>
+        <input name="name" required defaultValue={company.name} className={inputClass} />
+      </Field>
+
       <Field label="Industry">
         <input name="industry" defaultValue={company.industry ?? ""} className={inputClass} />
       </Field>
-
       <Field label="Company size">
         <select name="company_size" defaultValue={company.company_size ?? ""} className={inputClass}>
           <option value="">—</option>
@@ -39,7 +42,6 @@ export function CompanyProfileForm({ company }: { company: Company }) {
           ))}
         </select>
       </Field>
-
       <Field label="Funding stage">
         <select name="funding_stage" defaultValue={company.funding_stage ?? ""} className={inputClass}>
           <option value="">—</option>
@@ -50,7 +52,6 @@ export function CompanyProfileForm({ company }: { company: Company }) {
           ))}
         </select>
       </Field>
-
       <Field label="Founded year">
         <input
           name="founded_year"
@@ -61,13 +62,17 @@ export function CompanyProfileForm({ company }: { company: Company }) {
           className={inputClass}
         />
       </Field>
-
       <Field label="Website">
         <input name="website" type="url" defaultValue={company.website ?? ""} className={inputClass} />
       </Field>
-
       <Field label="Phone number">
         <input name="phone" type="tel" defaultValue={company.phone ?? ""} className={inputClass} />
+      </Field>
+      <Field label="LinkedIn URL">
+        <input name="linkedin_url" type="url" defaultValue={company.linkedin_url ?? ""} className={inputClass} />
+      </Field>
+      <Field label="Twitter / X URL">
+        <input name="twitter_url" type="url" defaultValue={company.twitter_url ?? ""} className={inputClass} />
       </Field>
 
       <Field label="Address" full>
@@ -75,12 +80,7 @@ export function CompanyProfileForm({ company }: { company: Company }) {
       </Field>
 
       <Field label="Description" full>
-        <textarea
-          name="description"
-          rows={3}
-          defaultValue={company.description ?? ""}
-          className={inputClass}
-        />
+        <textarea name="description" rows={3} defaultValue={company.description ?? ""} className={inputClass} />
       </Field>
 
       {state?.error && <p className="text-sm text-red-600 sm:col-span-2">{state.error}</p>}
@@ -91,7 +91,7 @@ export function CompanyProfileForm({ company }: { company: Company }) {
           disabled={pending}
           className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50"
         >
-          {pending ? "Saving..." : "Save company profile"}
+          {pending ? "Saving..." : "Save"}
         </button>
       </div>
     </form>

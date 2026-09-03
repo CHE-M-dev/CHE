@@ -31,12 +31,11 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPath = AUTH_PATHS.some((p) => path.startsWith(p));
-  const isInvitePath = path.startsWith("/invite/");
 
-  // Signing in is the only landing page — everything else, including the
-  // company directory, requires an account.
+  // Signing in is the only landing page — nothing else is reachable
+  // without an account.
   if (!user) {
-    if (isAuthPath || isInvitePath) return response;
+    if (isAuthPath) return response;
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -48,13 +47,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isInvitePath) return response;
-
-  // Everything under /apps is otherwise open to any signed-in user — each
-  // app decides its own access beyond that. The two exceptions: the Admin
-  // app is admin-only, and the Company app doesn't apply to admin accounts
-  // (they don't hold company memberships).
-  if (path.startsWith("/apps/admin") || path.startsWith("/apps/company")) {
+  // Everything under /apps is otherwise open to any signed-in user — a
+  // personal profile, browsing the directory, and any company's page.
+  // The one exception: the Admin app is admin-only.
+  if (path.startsWith("/apps/admin")) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("system_role")
@@ -62,12 +58,7 @@ export async function updateSession(request: NextRequest) {
       .single();
     const isAdmin = profile?.system_role === "super_admin" || profile?.system_role === "admin";
 
-    if (path.startsWith("/apps/admin") && !isAdmin) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/apps";
-      return NextResponse.redirect(url);
-    }
-    if (path.startsWith("/apps/company") && isAdmin) {
+    if (!isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = "/apps";
       return NextResponse.redirect(url);

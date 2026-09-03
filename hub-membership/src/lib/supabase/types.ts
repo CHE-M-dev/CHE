@@ -1,7 +1,7 @@
 import type { Tables } from "@/lib/supabase/database.types";
 
 export type SystemRole = "super_admin" | "admin" | "user";
-export type CompanyRole = "leader" | "startup_member" | "employee";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type CompanySize = "1-10" | "11-50" | "51-200" | "201-500" | "500+";
 export type FundingStage =
   | "bootstrapped"
@@ -15,10 +15,9 @@ export type FundingStage =
 
 export type Profile = Tables<"profiles">;
 export type Company = Tables<"companies">;
-export type CompanyMember = Tables<"company_members">;
-export type Invite = Tables<"invites">;
+export type Experience = Tables<"experiences">;
+export type PublicCompany = Tables<"public_companies">;
 export type AdminFeature = Tables<"admin_features">;
 export type AdminFeatureGrant = Tables<"admin_feature_grants">;
-export type PublicCompany = Tables<"public_companies">;
 
 export type { Database } from "@/lib/supabase/database.types";

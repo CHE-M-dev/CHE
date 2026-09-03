@@ -1,8 +1,9 @@
 # Startup Hub Membership
 
-A membership app for a startup hub. Nothing but membership: manual email/password
-accounts, startup companies, their teams, and admin oversight. No other features
-are in scope by design.
+A LinkedIn-style membership app for a startup hub: manual email/password
+accounts, a personal profile with work experience, startup company pages,
+and admin oversight. No posting/feed feature — that's deliberately out of
+scope.
 
 ## Architecture: sign in, then an app launcher
 
@@ -11,35 +12,43 @@ directory included. Once signed in, every user lands on `/apps`, a launcher
 (in the spirit of Odoo's app grid) showing only the apps their role grants
 them:
 
-- **Company** (`/apps/company`) — for everyone except admins. Shows the
-  create-company form if you don't have one yet; otherwise your company's
-  profile, roster, and invite links.
-- **Directory** (`/apps/directory`) — for every signed-in user. Search every
+- **Profile** (`/apps/profile`) — for everyone. Your name, headline, about,
+  and work experience.
+- **Directory** (`/apps/directory`) — for everyone. Search every approved
   startup on the hub.
 - **Admin** (`/apps/admin`) — only for admins and super admins. Sub-pages
-  (Companies, Members, Invites, Admins) are individually gated by that
-  admin's feature grants.
+  are individually gated by that admin's feature grants.
+
+Company pages live at `/apps/company/[id]` — reached by searching the
+Directory or by following a company link from someone's experience, not from
+a launcher tile (there's no single "your company" destination, since a
+person can have experience at any number of companies).
 
 Each app is self-contained under its own route segment with its own layout,
-actions, and components — adding a new app means adding a new folder under
-`src/app/apps/` and a tile on `/apps`, not touching the others.
+actions, and components.
 
-## Roles
+## The model: personal profile + experience, not team membership
 
-- **Company leader** — the person who creates a company. Can invite startup
-  members and employees via shareable invite links, and remove anyone from
-  their company (except themselves).
-- **Startup member** — a core team member added to a company (by the leader or
-  another startup member's invite link).
-- **Employee** — staff added to a company via an employee invite link.
-- **Admin** — created by a super admin, sees only the sections toggled on for
-  them: Companies, Members, Invites, Admins.
-- **Super admin** — full access. Creates sub-admin accounts and toggles which
-  features each one can access.
+There's no "your one company" relationship and no invite links. Instead:
 
-A user belongs to at most one company. Signing up with no invite link takes
-you to `/apps/company`, which prompts you to create a company (making you its
-leader); signing up via an invite link joins you to that company instead.
+- Everyone has a personal profile (name, headline, about) and any number of
+  **experiences** — a title at a company, with a date range and a
+  current/past flag, exactly like a LinkedIn work history entry.
+- **Adding an experience** means searching the Directory for the company —
+  or, if it doesn't exist yet, creating its page on the spot (name,
+  industry, size, funding stage, website, socials, and all the rest, plus
+  your own title there). Creating a company auto-approves your own founding
+  experience; searching an existing one submits a request.
+- **Two independent approvals** gate what's actually public:
+  - A **platform admin** reviews every newly created company page before
+    it's visible to anyone but its creator (Admin app → Companies).
+  - The **company's owner** (whoever created its page) reviews every "I work
+    here" request before that person shows up on the company's **Who works
+    here** tab (shown directly on the company page when you're the owner).
+- A company page has an **About** tab (industry, size, funding stage,
+  founded year, website, LinkedIn/Twitter links, address, description —
+  editable only by the owner) and a **Who works here** tab (everyone with an
+  approved, current experience there).
 
 ## Stack
 
@@ -50,32 +59,31 @@ leader); signing up via an invite link joins you to that company instead.
 ## How it works
 
 - Every Supabase auth user gets a `profiles` row automatically (`system_role`
-  defaults to `user`) via a database trigger.
-- `companies` holds one row per startup. `company_members` links a user to a
-  company with a `company_role` of `leader`, `startup_member`, or `employee`,
-  and a unique constraint on `user_id` so nobody is in two companies at once.
-- A company is created with just a name; the leader fills in the rest —
-  industry, company size, funding stage, founded year, website, phone,
-  address, and a short description — from the Company app's **Company
-  profile** section whenever they want. All of it is optional.
-- `invites` are single-use-by-default tokenized links (`/invite/<token>`)
-  scoped to a company and a role (`startup_member` or `employee`), created
-  only by the company leader. Accepting one is handled by the `accept_invite`
-  SQL function so the check-and-join is atomic.
-- The Directory app is backed by a `public_companies` view that exposes only
-  safe, non-sensitive fields (name, industry, size, funding stage, founded
-  year, website, description). Phone and address stay private to the
-  company's own members and admins — the view just never selects them. It's
-  a view rather than a table for that reason: it's the one thing every
-  signed-in user can read regardless of which company they belong to.
+  defaults to `user`) via a database trigger. `headline` and `bio` are
+  filled in from the Profile app.
+- `companies` holds one row per startup, including a `status` of `pending`,
+  `approved`, or `rejected`. `experiences` links a profile to a company with
+  a free-text `title`, `is_current`/`start_date`/`end_date`, and its own
+  `status` — a person can have any number of experiences, past or current,
+  at any number of companies.
+- `create_company_with_experience` creates the company (`pending`) and the
+  founder's own experience (auto-`approved`) atomically. `review_company`
+  (admin-only) and `review_experience` (company-owner-only) flip a row's
+  status — both check the caller's authority themselves and raise if it's
+  wrong, so they're safe to call directly.
+- The Directory (and anyone browsing a company they don't own) reads through
+  a `public_companies` view, not the `companies` table directly: it's
+  filtered to `status = 'approved'` and leaves out the private `phone`
+  column. The owner and admins read the full table instead, so they see
+  pending companies and the phone number.
 - `admin_features` is the fixed catalog of togglable admin capabilities
-  (`manage_companies`, `manage_members`, `manage_invites`, `view_admins`).
-  `admin_feature_grants` records which of those a given sub-admin has —
-  set only by a super admin.
+  (`manage_companies`, `view_admins`). `admin_feature_grants` records which
+  of those a given sub-admin has — set only by a super admin.
 - Route access and the post-login redirect to `/apps` are enforced in
-  `src/middleware.ts` based on the signed-in user's system role. Every table
-  also has Row Level Security policies so access is enforced at the database
-  layer regardless of the app.
+  `src/middleware.ts`, which only special-cases the Admin app (admin/
+  super_admin only) — everything else under `/apps` just requires being
+  signed in. Every table also has Row Level Security policies, so access is
+  enforced at the database layer regardless of the app.
 
 ## Local setup
 
@@ -109,14 +117,13 @@ update profiles set system_role = 'super_admin' where email = 'the-owner@example
 ```
 
 From then on, that person can create sub-admins from **Admin → Admins → Create
-a sub-admin**, and toggle which of the four admin features each one has.
+a sub-admin**, and toggle which of the two admin features each one has.
 
 ## Notes
 
-- Invite links expire after 14 days and are single-use by default
-  (`invites.max_uses`), enforced by the `accept_invite` function.
-- A company leader can remove any startup member or employee from their
-  company, but not themselves — there's no leadership transfer or company
-  deletion flow in this scope.
+- There's no editing an experience once submitted, only removing it (your
+  own) and re-adding it — keeps the approval model simple.
+- Rejected companies and experiences stay rejected; there's no re-review
+  flow in this scope.
 - Admins can never grant themselves permissions or create other admins —
   only a super admin can do either.

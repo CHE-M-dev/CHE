@@ -9,29 +9,19 @@ export default async function AppsLauncherPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("system_role")
+    .select("system_role, headline")
     .eq("id", user!.id)
     .single();
 
   const isAdmin = profile?.system_role === "super_admin" || profile?.system_role === "admin";
 
-  const { data: membership } = !isAdmin
-    ? await supabase
-        .from("company_members")
-        .select("company_id, company_role, companies(name)")
-        .eq("user_id", user!.id)
-        .maybeSingle()
-    : { data: null };
-
   const tiles = [
-    !isAdmin && {
-      href: "/apps/company",
-      icon: "🏢",
+    {
+      href: "/apps/profile",
+      icon: "👤",
       color: "bg-blue-100 text-blue-700",
-      label: "Company",
-      description: membership
-        ? membership.companies?.name ?? "Your team"
-        : "Set up your startup",
+      label: "Profile",
+      description: profile?.headline || "Your profile & experience",
     },
     {
       href: "/apps/directory",

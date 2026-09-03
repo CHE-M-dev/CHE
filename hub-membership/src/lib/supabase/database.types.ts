@@ -18,6 +18,8 @@ export type Database = {
           email: string
           full_name: string
           system_role: Database["public"]["Enums"]["system_role"]
+          headline: string | null
+          bio: string | null
           created_at: string
         }
         Insert: {
@@ -25,6 +27,8 @@ export type Database = {
           email: string
           full_name?: string
           system_role?: Database["public"]["Enums"]["system_role"]
+          headline?: string | null
+          bio?: string | null
           created_at?: string
         }
         Update: {
@@ -32,6 +36,8 @@ export type Database = {
           email?: string
           full_name?: string
           system_role?: Database["public"]["Enums"]["system_role"]
+          headline?: string | null
+          bio?: string | null
           created_at?: string
         }
         Relationships: []
@@ -42,6 +48,7 @@ export type Database = {
           name: string
           created_by: string
           created_at: string
+          status: Database["public"]["Enums"]["approval_status"]
           industry: string | null
           company_size: Database["public"]["Enums"]["company_size"] | null
           funding_stage: Database["public"]["Enums"]["funding_stage"] | null
@@ -50,12 +57,15 @@ export type Database = {
           phone: string | null
           address: string | null
           description: string | null
+          linkedin_url: string | null
+          twitter_url: string | null
         }
         Insert: {
           id?: string
           name: string
           created_by: string
           created_at?: string
+          status?: Database["public"]["Enums"]["approval_status"]
           industry?: string | null
           company_size?: Database["public"]["Enums"]["company_size"] | null
           funding_stage?: Database["public"]["Enums"]["funding_stage"] | null
@@ -64,12 +74,15 @@ export type Database = {
           phone?: string | null
           address?: string | null
           description?: string | null
+          linkedin_url?: string | null
+          twitter_url?: string | null
         }
         Update: {
           id?: string
           name?: string
           created_by?: string
           created_at?: string
+          status?: Database["public"]["Enums"]["approval_status"]
           industry?: string | null
           company_size?: Database["public"]["Enums"]["company_size"] | null
           funding_stage?: Database["public"]["Enums"]["funding_stage"] | null
@@ -78,6 +91,8 @@ export type Database = {
           phone?: string | null
           address?: string | null
           description?: string | null
+          linkedin_url?: string | null
+          twitter_url?: string | null
         }
         Relationships: [
           {
@@ -89,88 +104,53 @@ export type Database = {
           },
         ]
       }
-      company_members: {
+      experiences: {
         Row: {
           id: string
+          profile_id: string
           company_id: string
-          user_id: string
-          company_role: Database["public"]["Enums"]["company_role"]
-          invited_by: string | null
+          title: string
+          is_current: boolean
+          start_date: string | null
+          end_date: string | null
+          description: string | null
+          status: Database["public"]["Enums"]["approval_status"]
           created_at: string
         }
         Insert: {
           id?: string
+          profile_id?: string
           company_id: string
-          user_id: string
-          company_role: Database["public"]["Enums"]["company_role"]
-          invited_by?: string | null
+          title: string
+          is_current?: boolean
+          start_date?: string | null
+          end_date?: string | null
+          description?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
           created_at?: string
         }
         Update: {
           id?: string
+          profile_id?: string
           company_id?: string
-          user_id?: string
-          company_role?: Database["public"]["Enums"]["company_role"]
-          invited_by?: string | null
+          title?: string
+          is_current?: boolean
+          start_date?: string | null
+          end_date?: string | null
+          description?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
           created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "company_members_company_id_fkey"
-            columns: ["company_id"]
+            foreignKeyName: "experiences_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      invites: {
-        Row: {
-          id: string
-          company_id: string
-          role: Database["public"]["Enums"]["company_role"]
-          token: string
-          created_by: string
-          max_uses: number
-          uses_count: number
-          revoked: boolean
-          expires_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          company_id: string
-          role: Database["public"]["Enums"]["company_role"]
-          token?: string
-          created_by: string
-          max_uses?: number
-          uses_count?: number
-          revoked?: boolean
-          expires_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          company_id?: string
-          role?: Database["public"]["Enums"]["company_role"]
-          token?: string
-          created_by?: string
-          max_uses?: number
-          uses_count?: number
-          revoked?: boolean
-          expires_at?: string
-          created_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "invites_company_id_fkey"
+            foreignKeyName: "experiences_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -234,6 +214,10 @@ export type Database = {
           founded_year: number | null
           website: string | null
           description: string | null
+          address: string | null
+          linkedin_url: string | null
+          twitter_url: string | null
+          created_by: string
           created_at: string
         }
         Relationships: []
@@ -241,19 +225,30 @@ export type Database = {
     }
     Functions: {
       current_system_role: { Args: never; Returns: Database["public"]["Enums"]["system_role"] }
-      current_company_id: { Args: never; Returns: string }
-      current_company_role: { Args: never; Returns: Database["public"]["Enums"]["company_role"] }
       admin_has_feature: { Args: { p_feature: string }; Returns: boolean }
-      create_company: { Args: { p_name: string }; Returns: string }
-      get_invite_preview: {
-        Args: { p_token: string }
-        Returns: { company_name: string; role: Database["public"]["Enums"]["company_role"]; valid: boolean }[]
+      company_is_approved: { Args: { p_company_id: string }; Returns: boolean }
+      create_company_with_experience: {
+        Args: {
+          p_name: string
+          p_title: string
+          p_industry?: string | null
+          p_company_size?: Database["public"]["Enums"]["company_size"] | null
+          p_funding_stage?: Database["public"]["Enums"]["funding_stage"] | null
+          p_founded_year?: number | null
+          p_website?: string | null
+          p_phone?: string | null
+          p_address?: string | null
+          p_description?: string | null
+          p_linkedin_url?: string | null
+          p_twitter_url?: string | null
+        }
+        Returns: string
       }
-      accept_invite: { Args: { p_token: string }; Returns: string }
+      review_experience: { Args: { p_experience_id: string; p_approve: boolean }; Returns: undefined }
+      review_company: { Args: { p_company_id: string; p_approve: boolean }; Returns: undefined }
     }
     Enums: {
       system_role: "super_admin" | "admin" | "user"
-      company_role: "leader" | "startup_member" | "employee"
       company_size: "1-10" | "11-50" | "51-200" | "201-500" | "500+"
       funding_stage:
         | "bootstrapped"
@@ -264,6 +259,7 @@ export type Database = {
         | "series_c_plus"
         | "public"
         | "acquired"
+      approval_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -392,7 +388,6 @@ export const Constants = {
   public: {
     Enums: {
       system_role: ["super_admin", "admin", "user"],
-      company_role: ["leader", "startup_member", "employee"],
       company_size: ["1-10", "11-50", "51-200", "201-500", "500+"],
       funding_stage: [
         "bootstrapped",
@@ -404,6 +399,7 @@ export const Constants = {
         "public",
         "acquired",
       ],
+      approval_status: ["pending", "approved", "rejected"],
     },
   },
 } as const

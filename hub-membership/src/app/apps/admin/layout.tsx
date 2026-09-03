@@ -7,8 +7,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const links = [
     { href: "/apps/admin", label: "Overview", show: true },
     { href: "/apps/admin/companies", label: "Companies", show: enabled.has("manage_companies") },
-    { href: "/apps/admin/members", label: "Members", show: enabled.has("manage_members") },
-    { href: "/apps/admin/invites", label: "Invites", show: enabled.has("manage_invites") },
     { href: "/apps/admin/admins", label: "Admins", show: isSuperAdmin || enabled.has("view_admins") },
   ];
 

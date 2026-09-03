@@ -116,7 +116,11 @@ export default async function CompanyDirectoryPage({
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {companies.map((c) => (
-              <div key={c.id} className="space-y-2 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <Link
+                key={c.id}
+                href={`/apps/company/${c.id}`}
+                className="block space-y-2 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-neutral-300 hover:shadow-md"
+              >
                 <h2 className="text-sm font-semibold text-neutral-900">{c.name}</h2>
                 {c.description && <p className="text-sm text-neutral-600">{c.description}</p>}
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500">
@@ -125,17 +129,7 @@ export default async function CompanyDirectoryPage({
                   {c.funding_stage && <span>{FUNDING_STAGE_LABELS[c.funding_stage]}</span>}
                   {c.founded_year && <span>Founded {c.founded_year}</span>}
                 </div>
-                {c.website && (
-                  <a
-                    href={c.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block text-sm font-medium text-neutral-900 underline"
-                  >
-                    {c.website}
-                  </a>
-                )}
-              </div>
+              </Link>
             ))}
           </div>
         )}

@@ -3,12 +3,16 @@ import { getAdminContext } from "@/lib/admin-context";
 export default async function AdminOverviewPage() {
   const { supabase, isSuperAdmin, features } = await getAdminContext();
 
-  const [companyCount, memberCount, adminCount] = await Promise.all([
+  const [companyCount, pendingCount, adminCount] = await Promise.all([
     features.has("manage_companies")
       ? supabase.from("companies").select("*", { count: "exact", head: true }).then((r) => r.count)
       : null,
-    features.has("manage_members")
-      ? supabase.from("company_members").select("*", { count: "exact", head: true }).then((r) => r.count)
+    features.has("manage_companies")
+      ? supabase
+          .from("companies")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending")
+          .then((r) => r.count)
       : null,
     isSuperAdmin || features.has("view_admins")
       ? supabase
@@ -23,7 +27,7 @@ export default async function AdminOverviewPage() {
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Companies" value={companyCount} />
-        <StatCard label="Total members" value={memberCount} />
+        <StatCard label="Pending review" value={pendingCount} />
         <StatCard label="Admins" value={adminCount} />
       </div>
       <p className="text-sm text-neutral-500">
