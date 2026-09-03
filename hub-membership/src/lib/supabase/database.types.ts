@@ -42,18 +42,42 @@ export type Database = {
           name: string
           created_by: string
           created_at: string
+          industry: string | null
+          company_size: Database["public"]["Enums"]["company_size"] | null
+          funding_stage: Database["public"]["Enums"]["funding_stage"] | null
+          founded_year: number | null
+          website: string | null
+          phone: string | null
+          address: string | null
+          description: string | null
         }
         Insert: {
           id?: string
           name: string
           created_by: string
           created_at?: string
+          industry?: string | null
+          company_size?: Database["public"]["Enums"]["company_size"] | null
+          funding_stage?: Database["public"]["Enums"]["funding_stage"] | null
+          founded_year?: number | null
+          website?: string | null
+          phone?: string | null
+          address?: string | null
+          description?: string | null
         }
         Update: {
           id?: string
           name?: string
           created_by?: string
           created_at?: string
+          industry?: string | null
+          company_size?: Database["public"]["Enums"]["company_size"] | null
+          funding_stage?: Database["public"]["Enums"]["funding_stage"] | null
+          founded_year?: number | null
+          website?: string | null
+          phone?: string | null
+          address?: string | null
+          description?: string | null
         }
         Relationships: [
           {
@@ -217,6 +241,16 @@ export type Database = {
     Enums: {
       system_role: "super_admin" | "admin" | "user"
       company_role: "leader" | "startup_member" | "employee"
+      company_size: "1-10" | "11-50" | "51-200" | "201-500" | "500+"
+      funding_stage:
+        | "bootstrapped"
+        | "pre_seed"
+        | "seed"
+        | "series_a"
+        | "series_b"
+        | "series_c_plus"
+        | "public"
+        | "acquired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -346,6 +380,17 @@ export const Constants = {
     Enums: {
       system_role: ["super_admin", "admin", "user"],
       company_role: ["leader", "startup_member", "employee"],
+      company_size: ["1-10", "11-50", "51-200", "201-500", "500+"],
+      funding_stage: [
+        "bootstrapped",
+        "pre_seed",
+        "seed",
+        "series_a",
+        "series_b",
+        "series_c_plus",
+        "public",
+        "acquired",
+      ],
     },
   },
 } as const

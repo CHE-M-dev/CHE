@@ -2,11 +2,23 @@ import { createClient } from "@/lib/supabase/server";
 import { InviteGenerator } from "./invite-generator";
 import { RemoveMemberButton } from "./remove-member-button";
 import { RevokeInviteButton } from "./revoke-invite-button";
+import { CompanyProfileForm } from "./company-profile";
 
 const ROLE_LABELS: Record<string, string> = {
   leader: "Leader",
   startup_member: "Startup member",
   employee: "Employee",
+};
+
+const FUNDING_STAGE_LABELS: Record<string, string> = {
+  bootstrapped: "Bootstrapped",
+  pre_seed: "Pre-seed",
+  seed: "Seed",
+  series_a: "Series A",
+  series_b: "Series B",
+  series_c_plus: "Series C+",
+  public: "Public",
+  acquired: "Acquired",
 };
 
 export default async function DashboardPage() {
@@ -25,7 +37,8 @@ export default async function DashboardPage() {
 
   const isLeader = me.company_role === "leader";
 
-  const [{ data: members }, { data: invites }] = await Promise.all([
+  const [{ data: company }, { data: members }, { data: invites }] = await Promise.all([
+    supabase.from("companies").select("*").eq("id", me.company_id).single(),
     supabase
       .from("company_members")
       .select("id, user_id, company_role, created_at, profiles(full_name, email)")
@@ -47,6 +60,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {isLeader && <InviteGenerator />}
+
+      <Section title="Company profile">
+        {isLeader && company ? (
+          <CompanyProfileForm company={company} />
+        ) : (
+          company && <CompanyProfileSummary company={company} />
+        )}
+      </Section>
 
       <Section title="Team leader">
         {leader && <MemberRow member={leader} showRemove={false} />}
@@ -109,6 +130,50 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function EmptyState({ label }: { label: string }) {
   return <p className="py-2 text-sm text-neutral-500">{label}</p>;
+}
+
+function CompanyProfileSummary({
+  company,
+}: {
+  company: {
+    industry: string | null;
+    company_size: string | null;
+    funding_stage: string | null;
+    founded_year: number | null;
+    website: string | null;
+    phone: string | null;
+    address: string | null;
+    description: string | null;
+  };
+}) {
+  const rows: [string, string | null][] = [
+    ["Industry", company.industry],
+    ["Company size", company.company_size ? `${company.company_size} employees` : null],
+    ["Funding stage", company.funding_stage ? FUNDING_STAGE_LABELS[company.funding_stage] : null],
+    ["Founded", company.founded_year ? String(company.founded_year) : null],
+    ["Website", company.website],
+    ["Phone", company.phone],
+    ["Address", company.address],
+  ];
+  const filled = rows.filter(([, value]) => value);
+
+  if (filled.length === 0 && !company.description) {
+    return <p className="text-sm text-neutral-500">The team leader hasn&apos;t filled this in yet.</p>;
+  }
+
+  return (
+    <div className="space-y-3 text-sm">
+      {company.description && <p className="text-neutral-700">{company.description}</p>}
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+        {filled.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-neutral-500">{label}</dt>
+            <dd className="text-neutral-800">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
 }
 
 function MemberRow({

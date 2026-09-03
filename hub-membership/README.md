@@ -34,6 +34,10 @@ joins you to that company instead.
 - `companies` holds one row per startup. `company_members` links a user to a
   company with a `company_role` of `leader`, `startup_member`, or `employee`,
   and a unique constraint on `user_id` so nobody is in two companies at once.
+- A company is created with just a name; the leader fills in the rest —
+  industry, company size, funding stage, founded year, website, phone,
+  address, and a short description — from **Dashboard → Company profile**
+  whenever they want. All of it is optional.
 - `invites` are single-use-by-default tokenized links (`/invite/<token>`)
   scoped to a company and a role (`startup_member` or `employee`), created
   only by the company leader. Accepting one is handled by the `accept_invite`
@@ -50,8 +54,8 @@ joins you to that company instead.
 ## Local setup
 
 1. Create a Supabase project (or use an existing one dedicated to this app).
-2. Run the SQL in `supabase/migrations/0001_init.sql` once, via the Supabase
-   SQL editor or `supabase db push` with the CLI.
+2. Run the SQL files under `supabase/migrations/` once, in order, via the
+   Supabase SQL editor or `supabase db push` with the CLI.
 3. In Supabase Auth settings, you can leave "confirm email" on for production
    use, or turn it off (Authentication → Providers → Email) for instant
    access during local testing.

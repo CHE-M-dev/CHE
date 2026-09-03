@@ -49,3 +49,67 @@ export async function removeCompanyMember(memberRowId: string) {
   revalidatePath("/dashboard");
   return {};
 }
+
+function optionalText(formData: FormData, key: string) {
+  const value = String(formData.get(key) ?? "").trim();
+  return value === "" ? null : value;
+}
+
+export async function updateCompanyProfile(_: { error?: string } | undefined, formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const { data: membership } = await supabase
+    .from("company_members")
+    .select("company_id, company_role")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!membership || membership.company_role !== "leader") {
+    return { error: "Only the team leader can edit the company profile." };
+  }
+
+  const foundedYearRaw = optionalText(formData, "founded_year");
+  const founded_year = foundedYearRaw ? Number(foundedYearRaw) : null;
+  if (founded_year !== null && !Number.isInteger(founded_year)) {
+    return { error: "Founded year must be a whole number." };
+  }
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      industry: optionalText(formData, "industry"),
+      company_size: optionalText(formData, "company_size") as
+        | "1-10"
+        | "11-50"
+        | "51-200"
+        | "201-500"
+        | "500+"
+        | null,
+      funding_stage: optionalText(formData, "funding_stage") as
+        | "bootstrapped"
+        | "pre_seed"
+        | "seed"
+        | "series_a"
+        | "series_b"
+        | "series_c_plus"
+        | "public"
+        | "acquired"
+        | null,
+      founded_year,
+      website: optionalText(formData, "website"),
+      phone: optionalText(formData, "phone"),
+      address: optionalText(formData, "address"),
+      description: optionalText(formData, "description"),
+    })
+    .eq("id", membership.company_id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  return {};
+}
