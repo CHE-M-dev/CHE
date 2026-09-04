@@ -119,6 +119,39 @@ update profiles set system_role = 'super_admin' where email = 'the-owner@example
 From then on, that person can create sub-admins from **Admin → Admins → Create
 a sub-admin**, and toggle which of the two admin features each one has.
 
+## Telegram access (optional)
+
+The app can be opened from inside Telegram as a **Mini App** — a full-screen
+webview of this exact app, launched from a bot. It's the same login/signup
+pages as the browser version; nothing about auth changes, Telegram is just
+an access channel.
+
+1. Deploy the app first (see below) — you need a real HTTPS URL for Telegram
+   to open. Set `NEXT_PUBLIC_SITE_URL` to that URL.
+2. Create a bot via [@BotFather](https://t.me/BotFather) (`/newbot`) to get a
+   bot token. Set `TELEGRAM_BOT_TOKEN` to it.
+3. Pick any random string yourself for `TELEGRAM_WEBHOOK_SECRET` (e.g.
+   `openssl rand -hex 32`) — it's how `src/app/api/telegram/webhook/route.ts`
+   confirms an incoming request actually came from Telegram.
+4. Point Telegram at the webhook (run once, after deploying with the env vars
+   above set):
+
+   ```bash
+   curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+     -d "url=$NEXT_PUBLIC_SITE_URL/api/telegram/webhook" \
+     -d "secret_token=$TELEGRAM_WEBHOOK_SECRET"
+   ```
+5. Also set a persistent "Open App" menu button, so it's there even without
+   sending `/start` first:
+
+   ```bash
+   curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setChatMenuButton" \
+     -H "Content-Type: application/json" \
+     -d "{\"menu_button\": {\"type\": \"web_app\", \"text\": \"Open App\", \"web_app\": {\"url\": \"$NEXT_PUBLIC_SITE_URL\"}}}"
+   ```
+
+Message the bot `/start` to confirm it replies with an "Open App" button.
+
 ## Notes
 
 - There's no editing an experience once submitted, only removing it (your

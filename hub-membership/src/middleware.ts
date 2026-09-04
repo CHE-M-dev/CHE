@@ -7,6 +7,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // API routes handle their own auth (e.g. the Telegram webhook verifies
+    // Telegram's secret token) — redirecting them to /login on an
+    // unauthenticated request would break them, since callers there aren't
+    // a browser that can follow an HTML redirect.
+    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
