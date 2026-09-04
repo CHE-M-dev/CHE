@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: "Membership for startup companies and their teams",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
